@@ -111,7 +111,6 @@ function draw() {
         let y = Math.trunc(mouseY / scaling_factor);
 
         let rgb = get_image_rgb(x, y);
-        console.log(x,y, rgb['r']);
         for (c in rgb) {
             color_ranges[c]['min'] = min(color_ranges[c]['min'], rgb[c]);
             color_ranges[c]['max'] = max(color_ranges[c]['max'], rgb[c]);
@@ -196,13 +195,11 @@ function flip_color(c) {
 
 function mousePressed() {
     if (mouseX > 0 &&  mouseX < width && mouseY > 0 && mouseY < height) {
-        console.log('started dragging');
         mouse_dragging = true;
         let x = Math.trunc(mouseX / scaling_factor);
         let y = Math.trunc(mouseY / scaling_factor);
 
         let rgb = get_image_rgb(x, y);
-        console.log(x,y, rgb['r']);
         for (c in rgb) {
             color_ranges[c]['min'] = rgb[c];
             color_ranges[c]['max'] = rgb[c];
@@ -212,7 +209,6 @@ function mousePressed() {
 
 function mouseReleased() {
     if (mouse_dragging && mouseX > 0 &&  mouseX < width && mouseY > 0 && mouseY < height) {
-        console.log('stopped dragging');
         mouse_dragging = false;
         update_ranges();
     }
@@ -225,6 +221,7 @@ function reset() {
         'b': {'min': 0, 'max': 1},
     };
     update_ranges();
+    paused=false;
 }
 
 function keyPressed() {
