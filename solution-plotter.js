@@ -19,7 +19,8 @@ let config_canvas;
 let cost_canvas;
 let scaling_factor = 5;
 let config_map;
-let cost_map;
+let xy_cost_map;
+let i_cost;
 let cum_cost;
 let trace_config = false;
 let new_config = true;
@@ -33,7 +34,7 @@ let plot_path = true;
 let path_x = 128;
 let path_y = 128;
 let min_cost = 1;
-let max_cost = 3;
+let max_cost = 4;
 let path_color;
 
 let div_config = [
@@ -82,7 +83,13 @@ function load_submission(submission_file) {
         submission = [];
         config_map = {};
         cum_cost = {};
-        cost_map = {};
+        i_cost = {};
+        xy_cost_map = {};
+        for (let x=-128; x <= 128; x++) {
+            for (let y=-128; y <= 128; y++) {
+                xy_cost_map["(" + x + "," + y + ")"] = 0;
+            }
+        }
         let total_cost = 0;
         for (let idx = 0; idx < table.rows.length; idx++)
         {
@@ -97,7 +104,8 @@ function load_submission(submission_file) {
                 cost = get_cost(submission[idx-1], submission[idx]);
             }
             total_cost += cost;
-            cost_map[idx] = cost;
+            i_cost[idx] = cost;
+            xy_cost_map[xy_key] += cost;
             cum_cost[idx] = total_cost;
             if (xy_key in config_map)
             {
@@ -480,7 +488,7 @@ text_canvas.textStyle(NORMAL);
         let config_key = "(" + (x - 128) + "," + (128 - y) + ")";
         if (config_key in config_map) {
             for (const i of config_map[config_key]) {
-                config_str = i + ": " + submission[i] + " (" + Math.round(cost_map[i] * 100) / 100 + ")";
+                config_str = i + ": " + submission[i] + " (" + Math.round(i_cost[i] * 100) / 100 + ")";
                 text_canvas.text(config_str, text_x, text_y);
                 text_y += y_offset;
             }
@@ -523,7 +531,10 @@ function draw() {
             for (let j = idx; j <= last_idx; j++) {
                 draw_config(submission[j]);
                 [x_config, y_config] = config_to_cartesian(submission[j]);
-                scaled_plot(cost_canvas, x_config, y_config, heatmap_color(1, 6, cost_map[j]));
+                let xy_key = "(" + (x_config-128) + "," + (128-y_config) + ")";
+                console.log(xy_key);
+                console.log(xy_cost_map[xy_key]);
+                scaled_plot(cost_canvas, x_config, y_config, heatmap_color(1, 4, xy_cost_map[xy_key]));
             }
         } else {
             last_idx = max(0, idx + speed_direction * speed);
