@@ -12,17 +12,29 @@ let speed_direction = 1;
 let arm_colors;
 let canvas;
 let image_canvas;
+let path_canvas;
 let arm_canvas;
 let text_canvas;
 let config_canvas;
+let cost_canvas;
 let scaling_factor = 5;
 let config_map;
+let cost_map;
+let cum_cost;
 let trace_config = false;
 let new_config = true;
 let paused = false;
 let last_idx=0;
 let min_idx=1000000;
 let max_idx=1000000;
+let loop = false;
+let plot_cost = false;
+let plot_path = true;
+let path_x = 128;
+let path_y = 128;
+let min_cost = 1;
+let max_cost = 3;
+let path_color;
 
 let div_config = [
     [64, 0],
@@ -69,6 +81,9 @@ function load_submission(submission_file) {
     loadTable(submission_file, 'csv', 'header', (table) => {
         submission = [];
         config_map = {};
+        cum_cost = {};
+        cost_map = {};
+        let total_cost = 0;
         for (let idx = 0; idx < table.rows.length; idx++)
         {
             let config_arr = table.rows[idx].arr[0].split(";").map(cell => (cell.split(" ").map(x => int(x))));
@@ -77,6 +92,13 @@ function load_submission(submission_file) {
             x_config -= 128;
             y_config = 128 - y_config;
             let xy_key = "(" + x_config + "," + y_config + ")";
+            let cost = 0;
+            if (idx > 0) {
+                cost = get_cost(submission[idx-1], submission[idx]);
+            }
+            total_cost += cost;
+            cost_map[idx] = cost;
+            cum_cost[idx] = total_cost;
             if (xy_key in config_map)
             {
                 config_map[xy_key].push(idx);
@@ -110,12 +132,18 @@ function windowResized() {
 function reset_canvases() {
     background(220);
     image_canvas.clear();
+    path_canvas.clear();
     arm_canvas.clear();
     text_canvas.clear();
     config_canvas.clear();
+    cost_canvas.clear();
 
     image_canvas.noStroke();
+    cost_canvas.noStroke();
+    image_canvas.fill(255);
+    cost_canvas.fill(255);
     image_canvas.square(-1,-1, scaling_factor*257);
+    cost_canvas.square(-1,-1, scaling_factor*257);
 }
 
 function write_div_config() {
@@ -140,9 +168,8 @@ function write_div_config() {
     if (frameCount % 60 < 30) {
         let x_div_config;
         let y_div_config;
-        [x_div_config, y_div_config] = config_arr_to_cartesian(div_config);
-        config_canvas.stroke('magenta');
-        scaled_plot(config_canvas, x_div_config, y_div_config);
+        [x_div_config, y_div_config] = config_to_cartesian(div_config);
+        scaled_plot(config_canvas, x_div_config, y_div_config, color('magenta'));
     }
 
     if (new_config) {
@@ -217,14 +244,18 @@ function setup() {
     setSize();
     canvas = createCanvas(w, h).parent("canvas");
     image_canvas = createGraphics(scaling_factor*257, scaling_factor*257);
+    path_canvas = createGraphics(scaling_factor*257, scaling_factor*257);
     arm_canvas = createGraphics(scaling_factor*257, scaling_factor*257);
     text_canvas = createGraphics(scaling_factor*257, scaling_factor*257);
     config_canvas = createGraphics(scaling_factor*257, scaling_factor*257);
+    cost_canvas = createGraphics(scaling_factor*257, scaling_factor*257);
 
     image_canvas.parent("canvas");
+    path_canvas.parent("canvas");
     arm_canvas.parent("canvas");
     text_canvas.parent("canvas");
     config_canvas.parent("canvas");
+    cost_canvas.parent("canvas");
 
     reset_canvases();
 
@@ -240,6 +271,7 @@ function setup() {
         color('#E0AD09'),
         color('#000000')
     ];
+    path_color = color("#ff00ff");
 }
 
 function pause() {
@@ -265,21 +297,75 @@ function config_to_cartesian(config) {
     return [x, y]
 }
 
-function config_arr_to_cartesian(config) {
-    let x = 128;
-    let y = 128;
-    for (let j = 0; j < config.length; j++) {
-        [config_x, config_y];
-        x += config[j][0];
-        y -= config[j][1];
-    }
-    return [x, y]
-}
-
-
 function get_image_rgb(x, y) {
     [_, _, r, g, b] = image_csv.rows[257 * y + x].arr;
     return [r, g, b]
+}
+
+function get_cost(config1, config2) {
+    [x_config1, y_config1] = config_to_cartesian(config1);
+    [x_config2, y_config2] = config_to_cartesian(config2);
+    [_, _, r1, g1, b1] = image_csv.rows[257 * y_config1 + x_config1].arr;
+    [_, _, r2, g2, b2] = image_csv.rows[257 * y_config2 + x_config2].arr;
+
+    let cost = 0;
+    for (let i=0; i<config1.length; i++) {
+        if ((config1[i][0] != config2[i][0]) || (config1[i][1] != config2[i][1])) {
+            cost += 1;
+        }
+    }
+    cost = Math.sqrt(cost);
+    cost += Math.abs(r2-r1) + Math.abs(g2-g1) + Math.abs(b2-b1);
+    return cost
+}
+
+function plot_heatmap_legend() {
+    let cost = min_cost;
+    let i = 1;
+    let step = 0.1;
+    strokeCap(SQUARE);
+    let linewidth = 2 * scaling_factor;
+    let legend_x0 = 260;
+    let legend_y0 = 5;
+    let legend_w = 5;
+    while (cost <= max_cost + step) {
+        strokeWeight(linewidth);
+        stroke(heatmap_color(1, 3, cost));
+        line(
+            legend_x0 * scaling_factor,
+            legend_y0 * scaling_factor + i * linewidth,
+            (legend_x0 + legend_w) * scaling_factor,
+            legend_y0 * scaling_factor + i * linewidth
+        );
+        stroke(0);
+        strokeWeight(1);
+        if (int(cost * 10) % 10 == 0) {
+            text(
+                int(cost),
+                (legend_x0 + legend_w + 1) * scaling_factor,
+                legend_y0 * scaling_factor + i * linewidth + 6,
+            );
+        }
+
+        i += 1;
+        cost += step;
+    }
+    stroke(0);
+    strokeWeight(1);
+    text("Pixel Cost", legend_x0 * scaling_factor, 10)
+}
+
+function heatmap_color(minimum, maximum, value) {
+    let badness_ratio = (value-minimum) / (maximum - minimum);
+    // good
+    // 1: 252 214 218 -> 3: 243 34 5
+    // let best_color = color("#fcd6da");
+    // let worst_color = color("#f32205");
+    let r = 252 + (243-252) * badness_ratio;
+    let g = 214 + (34-214) * badness_ratio;
+    let b = 218 + (5-218) * badness_ratio;
+
+    return color(r, g, b);
 }
 
 function draw_config(config) {
@@ -288,16 +374,23 @@ function draw_config(config) {
     [x_config, y_config] = config_to_cartesian(config);
 
     [_, _, r, g, b] = image_csv.rows[257 * y_config + x_config].arr;
-    image_canvas.stroke(color(r * 255, g * 255, b * 255));
-    scaled_plot(image_canvas, x_config, y_config);
+    scaled_plot(image_canvas, x_config, y_config, color(r * 255, g * 255, b * 255));
+
+    path_canvas.stroke(path_color);
+    path_canvas.strokeWeight(1);
+    path_canvas.line(
+        scaling_factor * path_x + scaling_factor / 2,
+        scaling_factor * path_y + scaling_factor / 2,
+        scaling_factor * x_config + scaling_factor / 2,
+        scaling_factor * y_config + scaling_factor / 2
+    );
+    path_x = x_config;
+    path_y = y_config;
 }
 
-function scaled_plot(canvas, x, y) {
-    for (let scaled_x = scaling_factor * x; scaled_x < scaling_factor * x + scaling_factor; scaled_x++) {
-        for (let scaled_y = scaling_factor * y; scaled_y < scaling_factor * y + scaling_factor; scaled_y++) {
-            canvas.point(scaled_x, scaled_y);
-        }
-    }
+function scaled_plot(canvas, x, y, color) {
+    canvas.fill(color);
+    canvas.square(scaling_factor * x, scaling_factor * y, scaling_factor);
 }
 
 function undraw_config(config) {
@@ -305,8 +398,7 @@ function undraw_config(config) {
     let y_config;
     [x_config, y_config] = config_to_cartesian(config);
 
-    image_canvas.stroke(222);
-    scaled_plot(image_canvas, x_config, y_config);
+    scaled_plot(image_canvas, x_config, y_config, color("white"));
 }
 
 function draw_arm(config) {
@@ -359,8 +451,7 @@ text_canvas.textStyle(NORMAL);
         text_canvas.stroke(1);
         [r, g, b] = get_image_rgb(x, y);
         let pixel_str = "(" + (x - 128) + ", " + (128 - y) + ")";
-        text_canvas.fill("black");
-        scaled_plot(canvas, x, y);
+        scaled_plot(text_canvas, x, y, color("black"));
 
         let y0_offset = text_size;
         let y_offset = text_size * 1.5;
@@ -379,10 +470,12 @@ text_canvas.textStyle(NORMAL);
 
         let y_position = mouseY + y0_offset + 4 * y_offset;
         let config_key = "(" + (x - 128) + "," + (128 - y) + ")";
-        for (const i of config_map[config_key]) {
-            config_str = i + ": " + submission[i];
-            text_canvas.text(config_str, mouseX, y_position);
-            y_position+=y_offset;
+        if (config_key in config_map) {
+            for (const i of config_map[config_key]) {
+                config_str = i + ": " + submission[i] + " (" + Math.round(cost_map[i] * 100) / 100 + ")";
+                text_canvas.text(config_str, mouseX, y_position);
+                y_position+=y_offset;
+            }
         }
     }
     else {
@@ -397,9 +490,24 @@ function draw() {
     scale(sf);
     background(220);
 
+    loop = document.getElementById("loop").checked;
+    plot_path = document.getElementById("plot_path").checked;
+    plot_cost = document.getElementById("plot_heatmap").checked;
+    if (document.getElementById("speed_reverse").checked) {
+        speed_direction = -1;
+    } else {
+        speed_direction = 1;
+    }
+
     min_idx =  int(select("#min_idx").value());
     max_idx =  int(select("#max_idx").value());
-    idx = max(min_idx, idx);
+    if (isNaN(idx) || idx < min_idx) {
+        idx = min_idx;
+    }
+    if (loop && idx > max_idx) {
+        idx = min_idx;
+        reset_canvases();
+    }
 
     if (submission && !paused && min_idx < idx && idx < max_idx) {
         if (speed_direction > 0) {
@@ -417,7 +525,17 @@ function draw() {
         }
     }
 
-    image(image_canvas, 0, 0);
+    if (!plot_cost) {
+        image(image_canvas, 0, 0);
+    } else {
+        image(cost_canvas, 0, 0);
+
+    }
+
+    if (plot_path) {
+        image(path_canvas, 0, 0);
+    }
+
     update_pixel_info(last_idx);
     write_div_config();
     draw_textbox();
@@ -505,6 +623,7 @@ function decrease_speed() {
 }
 
 function reset() {
+    console.log("Reset");
     if (idx == 0) {
         return;
     }
