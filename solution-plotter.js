@@ -532,8 +532,6 @@ function draw() {
                 draw_config(submission[j]);
                 [x_config, y_config] = config_to_cartesian(submission[j]);
                 let xy_key = "(" + (x_config-128) + "," + (128-y_config) + ")";
-                console.log(xy_key);
-                console.log(xy_cost_map[xy_key]);
                 scaled_plot(cost_canvas, x_config, y_config, heatmap_color(1, 4, xy_cost_map[xy_key]));
             }
         } else {
