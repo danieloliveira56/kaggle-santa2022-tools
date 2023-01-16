@@ -69,9 +69,9 @@ let cell_id = [
     ["x0", "y0"],
 ];
 function preload() {
-    loadTable('image.csv', 'csv', 'header', (table) => {
+    loadTable('assets/image.csv', 'csv', 'header', (table) => {
         image_csv = table;
-        load_submission('submission82425.csv');
+        load_submission('assets/submission82425.csv');
     });
 }
 
