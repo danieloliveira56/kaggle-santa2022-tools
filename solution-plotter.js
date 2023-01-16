@@ -71,8 +71,9 @@ function load_submission(submission_file) {
         config_map = {};
         for (let idx = 0; idx < table.rows.length; idx++)
         {
-            submission.push(table.rows[idx].arr[0].split(";"));
-            [x_config, y_config] = config_to_cartesian(table.rows[idx].arr[0].split(";"));
+            let config_arr = table.rows[idx].arr[0].split(";").map(cell => (cell.split(" ").map(x => int(x))));
+            submission.push(config_arr);
+            [x_config, y_config] = config_to_cartesian(config_arr);
             x_config -= 128;
             y_config = 128 - y_config;
             let xy_key = "(" + x_config + "," + y_config + ")";
@@ -258,9 +259,8 @@ function config_to_cartesian(config) {
     let x = 128;
     let y = 128;
     for (let j = 0; j < config.length; j++) {
-        [config_x, config_y] = config[j].split(" ");
-        x += int(config_x);
-        y -= int(config_y);
+        x += config[j][0];
+        y -= config[j][1];
     }
     return [x, y]
 }
@@ -314,9 +314,8 @@ function draw_arm(config) {
     let y = 128;
     let arm_pts = [[x,y]]
     for (let j = 0; j < config.length; j++) {
-        [config_x, config_y] = config[j].split(" ");
-        x += int(config_x);
-        y -= int(config_y);
+        x += int(config[j][0]);
+        y -= int(config[j][1]);
         arm_pts.push([x,y]);
     }
     arm_canvas.clear();
@@ -407,6 +406,8 @@ function draw() {
             last_idx = min(idx+speed-1, submission.length-1);
             for (let j = idx; j <= last_idx; j++) {
                 draw_config(submission[j]);
+                [x_config, y_config] = config_to_cartesian(submission[j]);
+                scaled_plot(cost_canvas, x_config, y_config, heatmap_color(1, 6, cost_map[j]));
             }
         } else {
             last_idx = max(0, idx + speed_direction * speed);
