@@ -69,12 +69,24 @@
             <input type="range" class="mx-1" id="fps" min="1" max="60" value="60" step="1" onchange="update_fps()">
             <input type="button" class="btn btn-outline-primary px-3" value="+" onclick="increase_fps()">
         </div>
-        <div class="input-group mt-1">
-            <label for="speed" class="input-group-text">Speed (<span id="current_speed"></span>&nbsp;pixels per
-                frame)</label>
-            <input type="button" class="btn btn-outline-primary px-3" value="-" onclick="decrease_speed()">
-            <input type="range" class="mx-1" id="speed" min="-300" max="300" step="1" onchange="update_speed()">
-            <input type="button" class="btn btn-outline-primary px-3" value="+" onclick="increase_speed()">
+        <div class="row mt-1">
+            <div class="col-auto pe-0">
+                <div class="input-group">
+                    <label for="speed" class="input-group-text">Speed (<span id="current_speed"></span>&nbsp;pixels per
+                        frame)</label>
+                    <input type="button" class="btn btn-outline-primary px-3" value="-" onclick="decrease_speed()">
+                    <input type="range" class="mx-1" id="speed" min="1" max="300" step="1" onchange="update_speed()">
+                    <input type="button" class="btn btn-outline-primary px-3" value="+" onclick="increase_speed()">
+                </div>
+            </div>
+            <div class="col-auto">
+                <input type="button" class="btn btn-outline-primary px-3" value="1x" onclick="set_speed(1)">
+                <input type="button" class="btn btn-outline-primary px-3" value="5x" onclick="set_speed(5)">
+                <input type="button" class="btn btn-outline-primary px-3" value="10x" onclick="set_speed(10)">
+                <input type="button" class="btn btn-outline-primary px-3" value="300x" onclick="set_speed(300)">
+                <input type="checkbox" id="speed_reverse" class="ms-2">
+                <label class="form-check-label" for="speed_reverse">Reverse</label>
+            </div>
         </div>
         <div class="input-group mt-1">
             <label for="pixel" class="input-group-text">Point (0-indexed)&nbsp;<span id="current_pixel"></span>&nbsp;of&nbsp;

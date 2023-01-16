@@ -8,6 +8,7 @@ let submission;
 let image_csv;
 let fps = 60;
 let speed = 1;
+let speed_direction = 1;
 let arm_colors;
 let canvas;
 let image_canvas;
@@ -58,8 +59,8 @@ let cell_id = [
 function preload() {
     loadTable('image.csv', 'csv', 'header', (table) => {
         image_csv = table;
+        load_submission('submission82425.csv');
     });
-    load_submission('submission82425.csv');
 }
 
 function load_submission(submission_file) {
@@ -402,13 +403,13 @@ function draw() {
     idx = max(min_idx, idx);
 
     if (submission && !paused && min_idx < idx && idx < max_idx) {
-        if (speed > 0) {
+        if (speed_direction > 0) {
             last_idx = min(idx+speed-1, submission.length-1);
             for (let j = idx; j <= last_idx; j++) {
                 draw_config(submission[j]);
             }
         } else {
-            last_idx = max(0, idx+speed);
+            last_idx = max(0, idx + speed_direction * speed);
             for (let j = idx; j > last_idx; j--) {
                 undraw_config(submission[j]);
             }
@@ -420,7 +421,10 @@ function draw() {
     write_div_config();
     draw_textbox();
 
-    idx += speed;
+    if (!paused) {
+        idx += speed * speed_direction;
+    }
+    plot_heatmap_legend();
 }
 
 function decrease_pixel() {
@@ -478,6 +482,12 @@ function update_speed() {
     document.getElementById("increase_pixel").value = "+" + speed;
 }
 
+function set_speed(s) {
+    speed = s;
+    document.getElementById("speed").value = speed;
+    update_speed();
+}
+
 function increase_speed() {
     speed += 1;
     document.getElementById("speed").value = speed;
@@ -485,7 +495,7 @@ function increase_speed() {
 }
 
 function decrease_speed() {
-    if (speed == -300) {
+    if (speed == 1) {
         return;
     }
     speed -= 1;
