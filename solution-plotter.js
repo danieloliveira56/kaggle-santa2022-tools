@@ -140,6 +140,7 @@ function reset_canvases() {
 
     image_canvas.noStroke();
     cost_canvas.noStroke();
+    config_canvas.noStroke();
     image_canvas.fill(255);
     cost_canvas.fill(255);
     image_canvas.square(-1,-1, scaling_factor*257);
@@ -246,7 +247,7 @@ function setup() {
     image_canvas = createGraphics(scaling_factor*257, scaling_factor*257);
     path_canvas = createGraphics(scaling_factor*257, scaling_factor*257);
     arm_canvas = createGraphics(scaling_factor*257, scaling_factor*257);
-    text_canvas = createGraphics(scaling_factor*257, scaling_factor*257);
+    text_canvas = createGraphics(scaling_factor*500, scaling_factor*500);
     config_canvas = createGraphics(scaling_factor*257, scaling_factor*257);
     cost_canvas = createGraphics(scaling_factor*257, scaling_factor*257);
 
@@ -439,9 +440,10 @@ function mouseClicked() {
 
 function draw_textbox() {
 text_canvas.textStyle(NORMAL);
-    text_size = 10;
-    text_canvas.textSize();
+    text_size = max(12, 16 / sf);
+    text_canvas.textSize(text_size);
     text_canvas.strokeWeight(1 / sf);
+    text_canvas.noStroke();
 
     let x = Math.trunc((mouseX - x_shift) / sf / scaling_factor);
     let y = Math.trunc((mouseY - y_shift) / sf / scaling_factor);
@@ -453,28 +455,34 @@ text_canvas.textStyle(NORMAL);
         let pixel_str = "(" + (x - 128) + ", " + (128 - y) + ")";
         scaled_plot(text_canvas, x, y, color("black"));
 
-        let y0_offset = text_size;
-        let y_offset = text_size * 1.5;
+        let text_x, text_y;
+        text_x = (x + 2) * scaling_factor;
+        text_y = (y+3) * scaling_factor;
+
+        let y_offset = text_size * 1.5 ;
         text_canvas.stroke("red");
         text_canvas.fill("red");
-        text_canvas.text(Math.round(r * 100) / 100, mouseX, mouseY + y0_offset + y_offset);
+        text_canvas.text(Math.round(r * 100) / 100, text_x, text_y);
+        text_y += y_offset;
         text_canvas.stroke("green");
         text_canvas.fill("green");
-        text_canvas.text(Math.round(g * 100) / 100, mouseX, mouseY + y0_offset + 2 * y_offset);
+        text_canvas.text(Math.round(g * 100) / 100, text_x, text_y);
+        text_y += y_offset;
         text_canvas.stroke("blue");
         text_canvas.fill("blue");
-        text_canvas.text(Math.round(b * 100) / 100, mouseX, mouseY + y0_offset + 3 * y_offset);
+        text_canvas.text(Math.round(b * 100) / 100, text_x, text_y);
+        text_y += y_offset;
         text_canvas.stroke("black");
         text_canvas.fill("black");
-        text_canvas.text(pixel_str, mouseX, mouseY + y0_offset);
+        text_canvas.text(pixel_str, text_x, text_y);
+        text_y += y_offset;
 
-        let y_position = mouseY + y0_offset + 4 * y_offset;
         let config_key = "(" + (x - 128) + "," + (128 - y) + ")";
         if (config_key in config_map) {
             for (const i of config_map[config_key]) {
                 config_str = i + ": " + submission[i] + " (" + Math.round(cost_map[i] * 100) / 100 + ")";
-                text_canvas.text(config_str, mouseX, y_position);
-                y_position+=y_offset;
+                text_canvas.text(config_str, text_x, text_y);
+                text_y += y_offset;
             }
         }
     }
