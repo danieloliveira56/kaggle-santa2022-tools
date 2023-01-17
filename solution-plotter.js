@@ -188,8 +188,6 @@ function write_div_config() {
         document.getElementById("solution").scrollTop = document.getElementById("solution").scrollHeight;
         new_config = false;
     }
-
-    image(config_canvas, 0, 0);
 }
 
 function setup() {
@@ -553,6 +551,8 @@ function draw() {
         image(path_canvas, 0, 0);
     }
     image(arm_canvas, 0, 0);
+    image(config_canvas, 0, 0);
+
     image(text_canvas, 0, 0);
 
     if (!paused && idx <= max_idx) {
@@ -652,6 +652,10 @@ fileInput.addEventListener('change', () => {
     const objectURL = window.URL.createObjectURL(fileInput.files[0]);
     load_submission(objectURL);
 });
+
+function mouseClick(event) {
+
+}
 
 function mouseWheel(event) {
     if (mouseX < 0 ||  mouseX > w || mouseY < 0 || mouseY > h)
