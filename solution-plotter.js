@@ -425,7 +425,6 @@ function draw_arm(config) {
         arm_canvas.stroke(arm_colors[j - 1]);
         arm_canvas.line(scaling_factor * arm_pts[j - 1][0], scaling_factor * arm_pts[j - 1][1], scaling_factor * arm_pts[j][0], scaling_factor * arm_pts[j][1]);
     }
-    image(arm_canvas, 0, 0);
 }
 
 function mouseClicked() {
@@ -497,7 +496,6 @@ text_canvas.textStyle(NORMAL);
     else {
         cursor();
     }
-    image(text_canvas, 0, 0);
 }
 
 
@@ -540,24 +538,24 @@ function draw() {
                 undraw_config(submission[j]);
             }
         }
+        update_pixel_info(last_idx);
     }
+    write_div_config();
+    draw_textbox();
 
+    // All image setting should be centralized here.
     if (!plot_cost) {
         image(image_canvas, 0, 0);
     } else {
         image(cost_canvas, 0, 0);
-
     }
-
     if (plot_path) {
         image(path_canvas, 0, 0);
     }
+    image(arm_canvas, 0, 0);
+    image(text_canvas, 0, 0);
 
-    update_pixel_info(last_idx);
-    write_div_config();
-    draw_textbox();
-
-    if (!paused) {
+    if (!paused && idx <= max_idx) {
         idx += speed * speed_direction;
     }
     plot_heatmap_legend();
